@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat App</title>
+  <style>
+    ul { list-style-type: none; padding: 0; }
+    li { padding: 8px; margin-bottom: 10px; background: #f3f3f3; }
+    input { padding: 8px; width: calc(100% - 16px); }
+    button { padding: 8px; margin: 4px; }
+    #users { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div>
+    <input id="user" placeholder="Enter your name" autocomplete="off" />
+    <input id="room" placeholder="Enter room name" autocomplete="off" />
+    <button id="join">Join Room</button>
+    <button id="leave">Leave Room</button>
+  </div>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="input" autocomplete="off" /><button>Send</button>
+  </form>
+  <div id="users">
+    <h3>Users in room:</h3>
+    <ul id="user-list"></ul>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
+  <script>
+    var socket = io();
+
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var messages = document.getElementById('messages');
+    var userInput = document.getElementById('user');
+    var roomInput = document.getElementById('room');
+    var joinButton = document.getElementById('join');
+    var leaveButton = document.getElementById('leave');
+    var userList = document.getElementById('user-list');
+
+    var currentRoom = '';
+    var currentUser = '';
+
+    joinButton.addEventListener('click', function() {
+      var user = userInput.value.trim();
+      var room = roomInput.value.trim();
+      if (user && room) {
+        if (currentRoom) {
+          socket.emit('leave room', { user: currentUser, room: currentRoom });
+        }
+        currentRoom = room;
+        currentUser = user;
+        socket.emit('join room', { room, user });
+        messages.innerHTML = ''; // Clear previous messages
+        userList.innerHTML = ''; // Clear previous user list
+      }
+    });
+
+    leaveButton.addEventListener('click', function() {
+      if (currentRoom && currentUser) {
+        socket.emit('leave room', { user: currentUser, room: currentRoom });
+        currentRoom = '';
+        messages.innerHTML = ''; // Clear messages when leaving the room
+        userList.innerHTML = ''; // Clear user list when leaving the room
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (input.value && currentRoom && currentUser) {
+        socket.emit('chat message', { room: currentRoom, user: currentUser, msg: input.value });
+        input.value = '';
+      }
+    });
+
+    socket.on('message', function(msg) {
+      var item = document.createElement('li');
+      item.textContent = msg;
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    socket.on('chat message', function(data) {
+      var item = document.createElement('li');
+      item.textContent = `${data.timestamp} - ${data.user}: ${data.msg}`;
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    socket.on('user list', function(users) {
+      userList.innerHTML = ''; // Clear the current list
+      users.forEach(function(user) {
+        var item = document.createElement('li');
+        item.textContent = user;
+        userList.appendChild(item);
+      });
+    });
+  </script>
+</body>
+</html>
