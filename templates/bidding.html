@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Auction Application</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+</head>
+<body>
+    <script>
+        // Variables for user name and room name
+        var userName = localStorage.getItem('userName');
+        var roomName = localStorage.getItem('roomName');
+
+        if (!userName || !roomName) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong id="userNameDisplay"></strong></li>
+        </ul>
+        <ul>
+            <li><a href="#" id="roomNameDisplay"></a></li>
+            <li><a href="#">Online Members: 25</a></li>
+            <li><a href="#" role="button">Logout</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        <div class="grid">
+            <section>
+                <hgroup>
+                    <h2>Antique Clock Auction</h2>
+                    <h3>Current Item Information</h3>
+                </hgroup>
+                <p>This exquisite antique clock, crafted in the 19th century, features intricate designs and exceptional craftsmanship.</p>
+                <figure>
+                    <img src="https://files.oaiusercontent.com/file-OZvoNQUx5syJB472wyNUOvOs?se=2024-06-30T07%3A10%3A44Z&sp=r&sv=2023-11-03&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3D8072776c-c5df-42dd-81a0-0be75f594dc2.webp&sig=58ohXkcBJHXYvUC79LHMNfEG4GOBqBv7Fmmf328eAAs%3D" alt="Antique Clock">
+                    <figcaption><a href="https://files.oaiusercontent.com/file-OZvoNQUx5syJB472wyNUOvOs?se=2024-06-30T07%3A10%3A44Z&sp=r&sv=2023-11-03&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3D8072776c-c5df-42dd-81a0-0be75f594dc2.webp&sig=58ohXkcBJHXYvUC79LHMNfEG4GOBqBv7Fmmf328eAAs%3D" target="_blank">View Full Image</a></figcaption>
+                </figure>
+                <h3>Current Bid: $<span id="currentBid">500</span></h3>
+                <p>Current Highest Bidder: <span id="highestBidder">Jane Smith</span></p>
+                <h3>Place Your Bid</h3>
+                <p>
+                    <button type="button" onclick="placeBid(10)">Bid $10</button>
+                    <button type="button" onclick="placeBid(50)">Bid $50</button>
+                    <button type="button" onclick="placeBid(100)">Bid $100</button>
+                </p>
+            </section>
+            <section>
+                <hgroup>
+                    <h3>Chat Room</h3>
+                </hgroup>
+                <div style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll;" id="chatRoom">
+                    <p><strong>John:</strong> Hello, everyone!</p>
+                    <p><strong>Jane:</strong> Hi John! Excited for the auction.</p>
+                </div>
+                <textarea id="chatMessage" rows="3" placeholder="Type your message here..."></textarea>
+                <button type="button" onclick="sendMessage()">Send</button>
+            </section>
+        </div>
+    </main>
+    <footer class="container">
+        <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a></small>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
+    <script>
+
+        document.getElementById('userNameDisplay').textContent = "User: " + userName;
+        document.getElementById('roomNameDisplay').textContent = "Room: " + roomName;
+        
+        var socket = io("http://localhost:5000");
+
+        function placeBid(amount) {
+            // Function to handle bid placement
+            console.log(`Bid placed: $${amount}`);
+            socket.emit('placeBid', amount);
+        }
+
+        function sendMessage() {
+            // Function to handle sending chat messages
+            const message = document.getElementById('chatMessage').value;
+
+            const messageObject = {
+                user: userName,
+                room: roomName,
+                message: message
+            };
+
+            console.log(`Message sent: ${message}`);
+            socket.emit('chatMessage', messageObject);
+        }
+
+        socket.on('chatMessage', function(message) {
+            // Function to handle receiving chat messages
+            console.log('Message received: ');
+            const chatRoom = document.getElementById('chatRoom');
+            const newMessage = document.createElement('p');
+            newMessage.innerHTML = `<strong>${message.user}:</strong> ${message.message}`;
+            chatRoom.appendChild(newMessage);
+        });
+
+
+        socket.on('currentBid', function(data) {
+            // Function to handle receiving bid placements
+            document.getElementById('currentBid').textContent = data.amount;
+            document.getElementById('highestBidder').textContent = data.bidder;
+        });
+    </script>
+</body>
+</html>
