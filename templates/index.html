@@ -19,9 +19,7 @@
             <button type="button" onclick="joinRoom()">Join Room</button>
         </form>
     </main>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
     <script>
-        var socket = io();
 
         function joinRoom() {
             const userName = document.getElementById('userName').value;
@@ -29,8 +27,7 @@
             if (userName && roomName) {
                 localStorage.setItem('userName', userName);
                 localStorage.setItem('roomName', roomName);
-                socket.emit('joinRoom', { user: userName, room: roomName });
-                window.location.href = '/bidding.html';
+                window.location.href = '/bidding.html?userName=' + userName + '&roomName=' + roomName;
             } else {
                 alert("Please enter both username and room name");
             }

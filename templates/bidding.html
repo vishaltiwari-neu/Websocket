@@ -23,7 +23,7 @@
         <ul>
             <li><a href="#" id="roomNameDisplay"></a></li>
             <li><a href="#">Online Members: 25</a></li>
-            <li><a href="#" role="button">Logout</a></li>
+            <li><button type="button" onclick="leaveRoom()">Leave</button></li>
         </ul>
     </nav>
     <main class="container">
@@ -51,11 +51,10 @@
                 <hgroup>
                     <h3>Chat Room</h3>
                 </hgroup>
-                <div style="border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll;" id="chatRoom">
+                <div style="border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll;" id="chatRoom">
                     <p><strong>John:</strong> Hello, everyone!</p>
-                    <p><strong>Jane:</strong> Hi John! Excited for the auction.</p>
                 </div>
-                <textarea id="chatMessage" rows="3" placeholder="Type your message here..."></textarea>
+                <textarea id="chatMessage" rows="2" placeholder="Type your message here..."></textarea>
                 <button type="button" onclick="sendMessage()">Send</button>
             </section>
         </div>
@@ -72,10 +71,20 @@
         
         var socket = io("http://localhost:5000");
 
+        socket.emit('joinRoom', {
+            user: userName,
+            room: roomName
+        });
+
         function placeBid(amount) {
             // Function to handle bid placement
             console.log(`Bid placed: $${amount}`);
-            socket.emit('placeBid', amount);
+            const bidObject = {
+                user: userName,
+                room: roomName,
+                bid: amount
+            };
+            socket.emit('placeBid', bidObject);
         }
 
         function sendMessage() {
@@ -92,6 +101,17 @@
             socket.emit('chatMessage', messageObject);
         }
 
+        function leaveRoom() {
+            // Function to handle leaving the room
+            localStorage.removeItem('userName');
+            localStorage.removeItem('roomName');
+            socket.emit('leaveRoom', {
+                user: userName,
+                room: roomName
+            });
+            window.location.href = '/';
+        }
+
         socket.on('chatMessage', function(message) {
             // Function to handle receiving chat messages
             console.log('Message received: ');
@@ -99,13 +119,15 @@
             const newMessage = document.createElement('p');
             newMessage.innerHTML = `<strong>${message.user}:</strong> ${message.message}`;
             chatRoom.appendChild(newMessage);
+            chatRoom.scrollTop = chatRoom.scrollHeight;
         });
 
 
         socket.on('currentBid', function(data) {
             // Function to handle receiving bid placements
-            document.getElementById('currentBid').textContent = data.amount;
-            document.getElementById('highestBidder').textContent = data.bidder;
+            console.log('Bid received: ', data.bid);
+            document.getElementById('currentBid').textContent = data.bid;
+            document.getElementById('highestBidder').textContent = data.user;
         });
     </script>
 </body>
